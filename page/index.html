@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Safari code font check</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; margin: 16px; color: #1c1b1b; background: #fff; }
+  h1 { font-size: 1.25rem; margin: 0 0 8px; }
+  h2 { font-size: 1rem; margin: 20px 0 4px; }
+  pre, code { font-size: 14px; }
+  pre { background: #24292e; color: #e1e4e8; padding: 12px; overflow-x: auto; margin: 4px 0; }
+  .before { font-family: monospace; }
+  .after { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+  #info { font-size: 12px; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<h1>Safari code font check</h1>
+
+<h2>Before: monospace</h2>
+<p>Inline: <code class="before">User-agent: Illl1 O0</code></p>
+<pre class="before">User-agent: *
+Disallow: /search
+Illl1 O0 {} [] =></pre>
+
+<h2>After: ui-monospace, SF Mono, Menlo</h2>
+<p>Inline: <code class="after">User-agent: Illl1 O0</code></p>
+<pre class="after">User-agent: *
+Disallow: /search
+Illl1 O0 {} [] =></pre>
+
+<p id="info"></p>
+<script>
+  document.getElementById('info').textContent =
+    innerWidth + 'px wide. ' + navigator.userAgent;
+</script>
+</body>
+</html>

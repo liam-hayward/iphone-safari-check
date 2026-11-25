@@ -1,0 +1,115 @@
+name: Check
+
+# Opens page/index.html in Safari on an iPhone simulator and saves a screenshot.
+# Runs only when started by hand. Three Mac images run side by side to see which,
+# if any, gets Safari open.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  iphone:
+    strategy:
+      # One image failing must not stop the other two.
+      fail-fast: false
+      matrix:
+        include:
+          - { mac: macos-15, phone: iPhone 16 }
+          - { mac: macos-26, phone: iPhone 17 }
+          - { mac: xcode-27, phone: iPhone 17 }
+    runs-on: ${{ matrix.mac }}
+    timeout-minutes: 40
+    env:
+      PHONE: ${{ matrix.phone }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Serve the page on this Mac
+        run: |
+          mkdir out
+          nohup python3 -m http.server 8000 --bind 127.0.0.1 --directory page > out/server.log 2>&1 &
+          sleep 3
+          curl -sf -o /dev/null http://127.0.0.1:8000/
+
+      - name: Start the iPhone
+        timeout-minutes: 8
+        run: |
+          set -euo pipefail
+          # No iOS version given, so this takes the newest one this Mac's Xcode has.
+          UDID=$(xcrun simctl create page-check "$PHONE")
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl bootstatus "$UDID" -b 2>&1 | tee out/log.txt
+          xcrun simctl list devices booted 2>&1 | tee -a out/log.txt
+
+      # A freshly booted phone keeps the Mac very busy. The load average is how many
+      # tasks want a processor; these Macs have three. Wait for it to drop.
+      - name: Wait for the Mac to calm down
+        timeout-minutes: 11
+        run: |
+          SECONDS=0
+          while [ "$SECONDS" -lt 600 ]; do
+            LOAD=$(sysctl -n vm.loadavg | awk '{ print int($2) }')
+            echo "load $LOAD at ${SECONDS}s" | tee -a out/log.txt
+            [ "$LOAD" -lt 15 ] && break
+            sleep 15
+          done
+
+      # Saved now, so some evidence survives if a later step hangs the Mac.
+      - name: Save the boot log
+        if: always()
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: boot-${{ matrix.mac }}
+          path: out
+          retention-days: 3
+
+      # launch waits for Safari to start. openurl gives up after a few seconds, so it
+      # only hands the page to a Safari that is already running.
+      # Same fix as https://github.com/WordPress/gutenberg/pull/84640
+      - name: Start Safari
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          SECONDS=0
+          xcrun simctl launch "$UDID" com.apple.mobilesafari 2>&1 | tee -a out/log.txt
+          echo "Safari started after ${SECONDS}s" | tee -a out/log.txt
+
+      # Success means the page was requested, whatever openurl itself reports.
+      - name: Open the page
+        timeout-minutes: 5
+        run: |
+          SECONDS=0
+          until grep -q "GET /?iphone" out/server.log; do
+            if [ "$SECONDS" -gt 200 ]; then echo "::error::Safari never asked for the page."; exit 1; fi
+            xcrun simctl openurl "$UDID" "http://127.0.0.1:8000/?iphone" 2>&1 | tee -a out/log.txt
+            sleep 10
+          done
+          echo "Page requested after ${SECONDS}s" | tee -a out/log.txt
+          sleep 20
+
+      - name: Take the screenshot
+        if: always()
+        timeout-minutes: 3
+        continue-on-error: true
+        run: xcrun simctl io "$UDID" screenshot out/screen.png
+
+      - name: Save the results
+        if: always()
+        timeout-minutes: 2
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-${{ matrix.mac }}
+          path: out
+          retention-days: 3
+
+      # Last, so a shutdown that sticks cannot lose the screenshot.
+      - name: Shut the iPhone down
+        if: always()
+        timeout-minutes: 2
+        continue-on-error: true
+        run: xcrun simctl shutdown "$UDID"
