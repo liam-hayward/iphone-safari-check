@@ -1,8 +1,8 @@
 name: Check
 
 # Opens page/index.html in Safari on an iPhone simulator and saves a screenshot.
-# Runs only when started by hand. Three Mac images run side by side to see which,
-# if any, gets Safari open.
+# Runs only when started by hand. Three Mac images run side by side; delete lines
+# from the matrix to use fewer.
 
 on:
   workflow_dispatch:
