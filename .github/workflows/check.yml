@@ -25,7 +25,7 @@ jobs:
     env:
       PHONE: ${{ matrix.phone }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Serve the page on this Mac
         run: |
