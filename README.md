@@ -9,7 +9,7 @@ There is no Appium or Xcode project to set up: just one workflow file, [`check.y
 1. Press **Use this template**, then **Create a new repository**, and make it **public** (see [Cost](#cost)).
 2. Replace what is in `page/` with your own files. The page it opens is `page/index.html`.
 3. Open the **Actions** tab, choose **Check**, then **Run workflow**.
-4. Wait about 20 minutes, open the finished run and download a `result-…` file. `screen.png` inside it is the screenshot.
+4. Wait about 20 minutes, or longer when GitHub's Macs are busy. Open the finished run and download a `result-…` file. `screen.png` inside it is the screenshot.
 
 The example page compares two code fonts, so you can run it once before changing anything.
 
@@ -28,7 +28,7 @@ Each run uses three Macs at once. These are the versions on 25 November 2026, an
 To use fewer, delete lines from `matrix` in `check.yml`.
 
 - The screenshot shows the first screen of the page, not the full length.
-- Safari sometimes shows a tip that covers the bottom of the screen.
+- On iOS 26, a Safari tip covered the bottom of the screen in every run. On iOS 27 it did not appear.
 - It cannot tap, scroll or rotate.
 
 ## Cost
@@ -41,7 +41,7 @@ GitHub's terms say hosted runners are for work on [the software project associat
 
 Two earlier versions failed, because Safari never opened.
 
-- **"Booted" does not mean ready.** Right after booting, the load average (how many tasks want a processor) was between 360 and 742 on Macs with three processors. The workflow waits up to 10 minutes for it to drop. Two of the three Macs were still above 280 when Safari opened, so a shorter wait may be enough.
+- **"Booted" does not mean ready.** Right after booting, the load average (how many tasks want a processor) was between 300 and 742 on Macs with three processors. The workflow waits up to 10 minutes for it to drop. Three of eleven Macs were still above 280 when Safari opened, so a shorter wait may be enough.
 - **Start Safari before sending it the address.** `simctl openurl` can time out while Safari is still starting, so `simctl launch` goes first. The idea comes from [WordPress/gutenberg#84640](https://github.com/WordPress/gutenberg/pull/84640).
 - **Look for the page request, not the exit code.** Others report that `openurl` can time out for a page that [then opens](https://github.com/graphty-org/graphty-monorepo/pull/3681). The workflow reads the web server's log instead.
 - **Save the log early.** When a Mac hung, the run's log was lost, and once its saved files too. The boot log is uploaded before Safari starts.
@@ -49,6 +49,6 @@ Two earlier versions failed, because Safari never opened.
 
 ## Does it work every time?
 
-Not known yet. On 25 November 2026 it passed on all three Macs in one run out of one.
+Every time it got a Mac, so far. On 25 November 2026, four runs asked for twelve Macs. Eleven started and all eleven saved the screenshot, in 14 to 18 minutes each. GitHub never supplied the twelfth, so that run shows as failed. If that happens to you, start the workflow again.
 
 It is shared as it is, without support, and changes to GitHub's Macs may break it. [MIT licence](LICENSE).
